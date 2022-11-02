@@ -92,21 +92,6 @@ calculate_prec_recall(predictions, actual)
 predictions, actual = get_pred_acc_dicts(TotalPred, TotalAcc)
 calculate_prec_recall(predictions, actual)
 
-# # Change the directory
-# os.chdir(path2)
-#
-# # Read text File
-# actual = {}
-# # W,H = 640,320
-# # iterate through all file
-# for file in os.listdir():
-#     # Check whether file is in text format or not
-#     if file.endswith(".txt"):
-#         file_path = f"{path2}\{file}"
-#         actual[f"{file}"] = read_yolo_cords(file_path)
-
-# print(predictions)
-
 # print(actual[0][1])
 #
 # for i in actual:
