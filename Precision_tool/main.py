@@ -54,26 +54,33 @@ def get_pred_acc_dicts(file_path_pred, file_path_acc):
                 actual[f"{file}"] = read_voc_cords(file_path)
     return predictions, actual
 
-# Calculates precision and recall on the number of fish detections that the model
-# made for each image
-def prec_recall_number(predictions, actual):
+# Calculates precision, recall and accuracy on the number of fish detections
+# that the model made for each image
+def number_stats(predictions, actual):
     fileNames = list(predictions.keys())
     false_pos = 0;
     false_neg = 0;
     true_pos = 0;
+    true_neg = 0;
+    total = 0;
     for name in fileNames:
         if len(predictions[name]) < len(actual[name]):
             false_neg += (len(actual[name]) - len(predictions[name]))
         elif len(predictions[name]) > len(actual[name]):
             false_pos += (len(predictions[name]) - len(actual[name]))
-        true_pos += len(actual[name])
-    print("False Positive: ", false_pos, "False Negative: ", false_neg, "True Positive: ", true_pos)
+        elif (len(predictions[name]) == len(actual[name]) and len(actual[name]) != 0):
+            true_pos += len(actual[name])
+        else:
+            true_neg += 1
+        total += len(actual[name])
+    print("False Positive: ", false_pos, "False Negative: ", false_neg, "True Positive: ", true_pos, "True Negative: ", true_neg)
     print("Total Precision: ", true_pos/(true_pos + false_pos))
-    print("Total Recall: ", true_pos/(true_pos + false_neg), "\n")
+    print("Total Recall: ", true_pos/(true_pos + false_neg))
+    print("Total Accuracy: ", (true_pos + true_neg)/total, "\n")
 
 # Calculates accuracy, precision, and recall on whether the model properly
 # detected and didn't detect a fish in each image
-def prec_recall_acc_detection(predictions, actual):
+def detection_stats(predictions, actual):
     filesNames = list(predictions.keys())
     false_pos = 0;
     false_neg = 0;
@@ -104,25 +111,37 @@ caryAcc = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\car
 TotalPred = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\total_pred"
 TotalAcc = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\total_acc"
 
-print("Youtube Dataset: ")
+print("Youtube Dataset:")
+print("-----------------------------")
+print("Number of Fish")
 predictions, actual = get_pred_acc_dicts(YTPred, YTAcc)
-# prec_recall_number(predictions, actual)
-prec_recall_acc_detection(predictions, actual)
+number_stats(predictions, actual)
+print("Fish Detection")
+detection_stats(predictions, actual)
 
-print("Darknet Dataset: ")
+print("Darknet Dataset:")
+print("-----------------------------")
+print("Number of Fish")
 predictions, actual = get_pred_acc_dicts(FishPred, FishAcc)
-# prec_recall_number(predictions, actual)
-prec_recall_acc_detection(predictions, actual)
+number_stats(predictions, actual)
+print("Fish Detection")
+detection_stats(predictions, actual)
 
-print("Caryforst Dataset: ")
+print("Caryforst Dataset:")
+print("-----------------------------")
+print("Number of Fish")
 predictions, actual = get_pred_acc_dicts(caryPred, caryAcc)
-# prec_recall_number(predictions, actual)
-prec_recall_acc_detection(predictions, actual)
+number_stats(predictions, actual)
+print("Fish Detection:")
+detection_stats(predictions, actual)
 
-print("All Datasets: ")
+print("All Datasets")
+print("-----------------------------")
+print("Number of Fish")
 predictions, actual = get_pred_acc_dicts(TotalPred, TotalAcc)
-# prec_recall_number(predictions, actual)
-prec_recall_acc_detection(predictions, actual)
+number_stats(predictions, actual)
+print("Fish Detection")
+detection_stats(predictions, actual)
 
 # print(actual[0][1])
 #
