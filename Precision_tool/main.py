@@ -116,8 +116,8 @@ YTPred = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\test
 YTAcc = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\YoutubeData"
 FishPred = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\test_prec_results"
 FishAcc = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\Fish.v1-416x416.darknet"
-caryPred = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\caryforst_predictions"
-caryAcc = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\caryforst_actual"
+CaryPred = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\caryforst_predictions"
+CaryAcc = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\caryforst_actual"
 TotalPred = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\total_pred"
 TotalAcc = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\total_acc"
 
