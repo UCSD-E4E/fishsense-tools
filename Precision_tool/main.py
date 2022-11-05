@@ -2,12 +2,6 @@
 import os
 import pybboxes as pbx
 
-# # Change the directory
-# os.chdir(path)
-#
-# # Read text File
-# predictions = {}
-
 def read_text_file(file_path):
     with open(file_path, 'r') as f:
         return f.read()
@@ -60,7 +54,9 @@ def get_pred_acc_dicts(file_path_pred, file_path_acc):
                 actual[f"{file}"] = read_voc_cords(file_path)
     return predictions, actual
 
-def calculate_prec_recall(predictions, actual):
+# Calculates precision and recall on the number of fish detections that the model
+# made for each image
+def prec_recall_number(predictions, actual):
     fileNames = list(predictions.keys())
     false_pos = 0;
     false_neg = 0;
@@ -71,26 +67,62 @@ def calculate_prec_recall(predictions, actual):
         elif len(predictions[name]) > len(actual[name]):
             false_pos += (len(predictions[name]) - len(actual[name]))
         true_pos += len(actual[name])
-    print(false_pos, false_neg, true_pos)
-    print("Total_Prec: ", true_pos/(true_pos + false_pos))
-    print("Total_Recall: ", true_pos/(true_pos + false_neg))
+    print("False Positive: ", false_pos, "False Negative: ", false_neg, "True Positive: ", true_pos)
+    print("Total Precision: ", true_pos/(true_pos + false_pos))
+    print("Total Recall: ", true_pos/(true_pos + false_neg), "\n")
+
+# Calculates accuracy, precision, and recall on whether the model properly
+# detected and didn't detect a fish in each image
+def prec_recall_acc_detection(predictions, actual):
+    filesNames = list(predictions.keys())
+    false_pos = 0;
+    false_neg = 0;
+    true_pos = 0;
+    true_neg = 0;
+    for name in filesNames:
+        if(len(predictions[name]) > 0 and len(actual[name]) > 0):
+            true_pos += 1
+        elif (len(predictions[name]) > 0 and len(actual[name]) == 0):
+            false_pos += 1
+        elif (len(predictions[name]) == 0 and len(actual[name]) > 0):
+            false_neg += 1
+        else:
+            true_neg += 1
+
+    print("False Positive: ", false_pos, "False Negative: ", false_neg, "True Positive: ", true_pos, "True Negative: ", true_neg)
+    print("Total Precision: ", true_pos/(true_pos + false_pos))
+    print("Total Recall: ", true_pos/(true_pos + false_neg))
+    print("Total Accuracy: ", (true_pos + true_neg)/len(actual), "\n")
 
 # Folder Paths
 YTPred = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\test_prec_YT"
 YTAcc = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\YoutubeData"
 FishPred = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\test_prec_results"
 FishAcc = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\Fish.v1-416x416.darknet"
+caryPred = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\caryforst_predictions"
+caryAcc = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\caryforst_actual"
 TotalPred = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\total_pred"
 TotalAcc = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\total_acc"
 
+print("Youtube Dataset: ")
 predictions, actual = get_pred_acc_dicts(YTPred, YTAcc)
-calculate_prec_recall(predictions, actual)
+# prec_recall_number(predictions, actual)
+prec_recall_acc_detection(predictions, actual)
 
+print("Darknet Dataset: ")
 predictions, actual = get_pred_acc_dicts(FishPred, FishAcc)
-calculate_prec_recall(predictions, actual)
+# prec_recall_number(predictions, actual)
+prec_recall_acc_detection(predictions, actual)
 
+print("Caryforst Dataset: ")
+predictions, actual = get_pred_acc_dicts(caryPred, caryAcc)
+# prec_recall_number(predictions, actual)
+prec_recall_acc_detection(predictions, actual)
+
+print("All Datasets: ")
 predictions, actual = get_pred_acc_dicts(TotalPred, TotalAcc)
-calculate_prec_recall(predictions, actual)
+# prec_recall_number(predictions, actual)
+prec_recall_acc_detection(predictions, actual)
 
 # print(actual[0][1])
 #
