@@ -68,7 +68,7 @@ def number_stats(predictions, actual):
             false_neg += (len(actual[name]) - len(predictions[name]))
         elif len(predictions[name]) > len(actual[name]):
             false_pos += (len(predictions[name]) - len(actual[name]))
-        elif (len(predictions[name]) == len(actual[name]) and len(actual[name]) != 0):
+        elif len(predictions[name]) == len(actual[name]) and len(actual[name]) != 0:
             true_pos += len(actual[name])
         else:
             true_neg += 1
@@ -87,11 +87,11 @@ def detection_stats(predictions, actual):
     true_pos = 0;
     true_neg = 0;
     for name in filesNames:
-        if(len(predictions[name]) > 0 and len(actual[name]) > 0):
+        if len(predictions[name]) > 0 and len(actual[name]) > 0:
             true_pos += 1
-        elif (len(predictions[name]) > 0 and len(actual[name]) == 0):
+        elif len(predictions[name]) > 0 and len(actual[name]) == 0:
             false_pos += 1
-        elif (len(predictions[name]) == 0 and len(actual[name]) > 0):
+        elif len(predictions[name]) == 0 and len(actual[name]) > 0:
             false_neg += 1
         else:
             true_neg += 1
@@ -100,6 +100,16 @@ def detection_stats(predictions, actual):
     print("Total Precision: ", true_pos/(true_pos + false_pos))
     print("Total Recall: ", true_pos/(true_pos + false_neg))
     print("Total Accuracy: ", (true_pos + true_neg)/len(actual), "\n")
+
+# Returns images that contain fish
+def images_with_fish(actual):
+    filesNames = list(actual.keys())
+    fishImages = [];
+    for name in filesNames:
+        if len(actual[name] != 0):
+            fishImages.append(name)
+    return fishImages
+
 
 # Folder Paths
 YTPred = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\test_prec_YT"
