@@ -101,15 +101,39 @@ def detection_stats(predictions, actual):
     print("Total Recall: ", true_pos/(true_pos + false_neg))
     print("Total Accuracy: ", (true_pos + true_neg)/len(actual), "\n")
 
-# Returns images that contain fish
-def images_with_fish(actual):
+# Returns list of image names that contain no fish
+def images_without_fish(actual):
     filesNames = list(actual.keys())
-    fishImages = [];
+    noFishImages = [];
     for name in filesNames:
-        if len(actual[name] != 0):
-            fishImages.append(name)
-    return fishImages
+        if len(actual[name]) == 0:
+            noExt = name[:len(name)-4]
+            noFishImages.append(noExt)
+    return noFishImages
 
+# Cleans out all empty images and its associated txt file from the prediction and actual folders
+def clean_empty_fish(file_path_pred, file_path_acc):
+    predictions, actual = get_pred_acc_dicts(file_path_pred, file_path_acc)
+    noFishImages = images_without_fish(actual)
+    imagesRemoved = []
+    count = 0
+
+    os.chdir(file_path_pred)
+    for file in os.listdir():
+        if (file.endswith(".jpg") or file.endswith(".png")) and file[:len(file)-13] in noFishImages:
+            os.remove(file)
+            os.remove(file[:len(file)-13] + ".txt")
+            imagesRemoved.append(file)
+            count += 1;
+
+    os.chdir(file_path_acc)
+    for file in os.listdir():
+        if (file.endswith(".jpg") or file.endswith(".png")) and file[:len(file)-13] in noFishImages:
+            os.remove(file)
+            os.remove(file[:len(file)-13] + ".txt")
+
+    print(f"{count} files removed")
+    return imagesRemoved
 
 # Folder Paths
 YTPred = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\test_prec_YT"
@@ -140,7 +164,7 @@ detection_stats(predictions, actual)
 print("Caryforst Dataset:")
 print("-----------------------------")
 print("Number of Fish")
-predictions, actual = get_pred_acc_dicts(caryPred, caryAcc)
+predictions, actual = get_pred_acc_dicts(CaryPred, CaryAcc)
 number_stats(predictions, actual)
 print("Fish Detection:")
 detection_stats(predictions, actual)
