@@ -1,5 +1,6 @@
 # Import Module
 import os
+import shutil
 import pybboxes as pbx
 
 def read_text_file(file_path):
@@ -56,6 +57,8 @@ def get_pred_acc_dicts(file_path_pred, file_path_acc):
 
 # Calculates precision, recall and accuracy on the number of fish detections
 # that the model made for each image
+
+#TODO: Check how true_neg is calculated and review that stats calculations is correct (should be, but double check)
 def number_stats(predictions, actual):
     fileNames = list(predictions.keys())
     false_pos = 0;
@@ -102,19 +105,38 @@ def detection_stats(predictions, actual):
     print("Total Accuracy: ", (true_pos + true_neg)/len(actual), "\n")
 
 # Returns list of image names that contain no fish
-def images_without_fish(actual):
-    filesNames = list(actual.keys())
+def images_without_fish(dir):
+    filesNames = list(dir.keys())
     noFishImages = [];
     for name in filesNames:
-        if len(actual[name]) == 0:
+        if len(dir[name]) == 0:
             noExt = name[:len(name)-4]
             noFishImages.append(noExt)
     return noFishImages
 
+def false_neg_images(predictions, actual, pred_path):
+    modelNoFish = images_without_fish(predictions)
+    actualNoFish = images_without_fish(actual)
+    falseNeg = []
+    for imageName in modelNoFish:
+        if imageName not in actualNoFish:
+            falseNeg.append(imageName)
+
+    false_neg_dir = pred_path + "\\false_negatives"
+    os.mkdir(false_neg_dir)
+    os.chdir(pred_path)
+    for file in os.listdir():
+        if (file.endswith(".jpg") or file.endswith(".png")) and file[:len(file)-13] in falseNeg:
+            shutil.copyfile(file, false_neg_dir + "\\" + file)
+
+    return falseNeg
+
+
 # Cleans out all empty images and its associated txt file from the prediction and actual folders
+#TODO: Maybe change to run it on one folder instead of both
 def clean_empty_fish(file_path_pred, file_path_acc):
     predictions, actual = get_pred_acc_dicts(file_path_pred, file_path_acc)
-    noFishImages = images_without_fish(actual)
+    noFishImages = images_without_fish(predictions)
     imagesRemoved = []
     count = 0
 
@@ -134,6 +156,8 @@ def clean_empty_fish(file_path_pred, file_path_acc):
 
     print(f"{count} files removed")
     return imagesRemoved
+
+# Focus on false negatives: why does the model think there are no fish there
 
 # Folder Paths
 YTPred = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\test_prec_YT"
@@ -160,6 +184,7 @@ predictions, actual = get_pred_acc_dicts(FishPred, FishAcc)
 number_stats(predictions, actual)
 print("Fish Detection")
 detection_stats(predictions, actual)
+
 
 print("Caryforst Dataset:")
 print("-----------------------------")
