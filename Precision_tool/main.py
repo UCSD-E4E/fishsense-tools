@@ -2,6 +2,7 @@
 import os
 import shutil
 import pybboxes as pbx
+import csv
 
 def read_text_file(file_path):
     with open(file_path, 'r') as f:
@@ -41,7 +42,10 @@ def get_pred_acc_dicts(file_path_pred, file_path_acc):
         # Check whether file is in text format or not
         if file.endswith(".txt"):
             file_path = f"{file_path_pred}\{file}"
-            predictions[f"{file}"] = read_voc_cords(file_path)
+            if (len(file) == 10):
+                predictions[f"{file[3:10]}"] = read_voc_cords(file_path)
+            else: 
+                predictions[f"{file}"] = read_voc_cords(file_path)
 
     # iterate through all accurate files
     os.chdir(file_path_acc)
@@ -59,7 +63,7 @@ def get_pred_acc_dicts(file_path_pred, file_path_acc):
 # that the model made for each image
 
 #TODO: Check how true_neg is calculated and review that stats calculations is correct (should be, but double check)
-def number_stats(predictions, actual):
+def number_stats(name, predictions, actual):
     fileNames = list(predictions.keys())
     false_pos = 0;
     false_neg = 0;
@@ -76,14 +80,18 @@ def number_stats(predictions, actual):
         else:
             true_neg += 1
         total += len(actual[name])
+    precision = true_pos/(true_pos + false_pos)
+    recall = true_pos/(true_pos + false_neg)
+    accuracy = (true_pos + true_neg)/len(actual)
     print("False Positive: ", false_pos, "False Negative: ", false_neg, "True Positive: ", true_pos, "True Negative: ", true_neg)
-    print("Total Precision: ", true_pos/(true_pos + false_pos))
-    print("Total Recall: ", true_pos/(true_pos + false_neg))
-    print("Total Accuracy: ", (true_pos + true_neg)/total, "\n")
+    print("Total Precision: ", precision)
+    print("Total Recall: ", recall)
+    print("Total Accuracy: ", accuracy, "\n")
+    return [name, precision, recall, accuracy]
 
 # Calculates accuracy, precision, and recall on whether the model properly
 # detected and didn't detect a fish in each image
-def detection_stats(predictions, actual):
+def detection_stats(overalldir, dir, predictions, actual):
     filesNames = list(predictions.keys())
     false_pos = 0;
     false_neg = 0;
@@ -98,11 +106,14 @@ def detection_stats(predictions, actual):
             false_neg += 1
         else:
             true_neg += 1
-
+    precision = true_pos/(true_pos + false_pos)
+    recall = true_pos/(true_pos + false_neg)
+    accuracy = (true_pos + true_neg)/len(actual)
     print("False Positive: ", false_pos, "False Negative: ", false_neg, "True Positive: ", true_pos, "True Negative: ", true_neg)
-    print("Total Precision: ", true_pos/(true_pos + false_pos))
-    print("Total Recall: ", true_pos/(true_pos + false_neg))
-    print("Total Accuracy: ", (true_pos + true_neg)/len(actual), "\n")
+    print("Total Precision: ", precision)
+    print("Total Recall: ", recall)
+    print("Total Accuracy: ", accuracy, "\n")
+    return [overalldir, dir, precision, recall, accuracy, true_pos, false_pos, false_neg, true_neg]
 
 # Returns list of image names that contain no fish
 def images_without_fish(dir):
@@ -157,7 +168,45 @@ def clean_empty_fish(file_path_pred, file_path_acc):
     print(f"{count} files removed")
     return imagesRemoved
 
-# Focus on false negatives: why does the model think there are no fish there
+def create_csv():
+    header = ['Overall Folder', 'Individual Test', 'Precision', 'Recall', 'Accuracy', 'True Positive', 'False Positive', 'False Negative', 'True Negative']
+    path = r"C:\Users\hnvul\Downloads\carysfort_results"
+    csvFile = open(path + "\\" + "results.csv", 'w')
+    writer = csv.writer(csvFile)
+    writer.writerow(header)
+    os.chdir(path)
+    for dir in os.listdir():
+        currFolder = path + "\\" + dir
+        for folder in os.listdir(currFolder):
+            print(folder)
+            predictions, actual = get_pred_acc_dicts(currFolder + "\\" + folder, CaryAcc)
+            false_neg_images(predictions, actual, currFolder + "\\" + folder)
+            writer.writerow(detection_stats(dir, folder, predictions, actual))
+    csvFile.close()
+
+def empty_txt_images(detection_path, original_path):
+    predictions = {}
+    os.chdir(detection_path)
+    for file in os.listdir():
+        # Check whether file is in text format or not
+        if file.endswith(".txt"):
+            file_path = f"{detection_path}\{file}"
+            if (len(file) == 10):
+                predictions[f"{file[3:10]}"] = read_voc_cords(file_path)
+            else: 
+                predictions[f"{file}"] = read_voc_cords(file_path)
+    noFish = images_without_fish(predictions)
+    os.chdir(original_path)
+    emptyTxtDir = original_path + "\\empty_txts"
+    os.mkdir(emptyTxtDir)
+    for file in os.listdir():
+        if (file.endswith(".jpg") or file.endswith(".png")) and file[:len(file)-4] in noFish:
+            shutil.copyfile(file, emptyTxtDir + "\\" + file)
+
+# CaryPred = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\caryforst_predictions"
+# CaryOrig = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\cary_orig"
+
+# empty_txt_images(CaryPred, CaryOrig)
 
 # Folder Paths
 YTPred = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\test_prec_YT"
@@ -169,38 +218,41 @@ CaryAcc = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\car
 TotalPred = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\total_pred"
 TotalAcc = r"C:\Users\hnvul\Downloads\precision_from_txts\precision_from_txts\total_acc"
 
-print("Youtube Dataset:")
-print("-----------------------------")
-print("Number of Fish")
-predictions, actual = get_pred_acc_dicts(YTPred, YTAcc)
-number_stats(predictions, actual)
-print("Fish Detection")
-detection_stats(predictions, actual)
-
-print("Darknet Dataset:")
-print("-----------------------------")
-print("Number of Fish")
-predictions, actual = get_pred_acc_dicts(FishPred, FishAcc)
-number_stats(predictions, actual)
-print("Fish Detection")
-detection_stats(predictions, actual)
+            
 
 
-print("Caryforst Dataset:")
-print("-----------------------------")
-print("Number of Fish")
-predictions, actual = get_pred_acc_dicts(CaryPred, CaryAcc)
-number_stats(predictions, actual)
-print("Fish Detection:")
-detection_stats(predictions, actual)
+# print("Youtube Dataset:")
+# print("-----------------------------")
+# print("Number of Fish")
+# predictions, actual = get_pred_acc_dicts(YTPred, YTAcc)
+# number_stats(predictions, actual)
+# print("Fish Detection")
+# detection_stats(predictions, actual)
 
-print("All Datasets")
-print("-----------------------------")
-print("Number of Fish")
-predictions, actual = get_pred_acc_dicts(TotalPred, TotalAcc)
-number_stats(predictions, actual)
-print("Fish Detection")
-detection_stats(predictions, actual)
+# print("Darknet Dataset:")
+# print("-----------------------------")
+# print("Number of Fish")
+# predictions, actual = get_pred_acc_dicts(FishPred, FishAcc)
+# number_stats(predictions, actual)
+# print("Fish Detection")
+# detection_stats(predictions, actual)
+
+
+# print("Caryforst Dataset:")
+# print("-----------------------------")
+# print("Number of Fish")
+# predictions, actual = get_pred_acc_dicts(CaryPred, CaryAcc)
+# number_stats(predictions, actual)
+# print("Fish Detection:")
+# detection_stats(predictions, actual)
+
+# print("All Datasets")
+# print("-----------------------------")
+# print("Number of Fish")
+# predictions, actual = get_pred_acc_dicts(TotalPred, TotalAcc)
+# number_stats(predictions, actual)
+# print("Fish Detection")
+# detection_stats(predictions, actual)
 
 # print(actual[0][1])
 #
