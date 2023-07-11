@@ -1,23 +1,30 @@
-import wave
-import numpy as np
-import matplotlib.pyplot as plt
-import stumpy
-import os
-from moviepy.editor import VideoFileClip 
+"""Gopro Sync Tool for sychronization two gopro videos using an impulse noise
+Usage: python goprosync.py --left PATH_TO_LEFT_MP4 
+        --right PATH_TO_RIGHT_MP4 --out PATH_TO_OUTPUT_DIRECTORY
+"""
+import sys
 from pathlib import Path
 import argparse
+import shutil
 
+import wave
+import numpy as np
+import stumpy
+from moviepy.editor import VideoFileClip
 
-def gopro_sync(left, right, trimmed_left, trimmed_right):
+def gopro_sync(left: Path, right: Path, trimmed_left: Path, trimmed_right: Path):
+    """Perform gopro synchronization.
+
+    Keyword arguments:
+    left -- path to the left camera mp4
+    right -- path to the right camera mp4
+    trimmed_left -- output path for the trimmed left image
+    trimmed_right -- output path for the trimmed right image
+    """
 
     # Create a temporary directory to store the audio files
-    
-    try:
-        os.mkdir(".temp")
-    except FileExistsError:
-        pass
-    
-    curr_directory = Path(os.getcwd()).joinpath(".temp")
+    curr_directory = Path('./.temp')
+    curr_directory.mkdir(exist_ok=True)
 
     left_audio_path = curr_directory.joinpath("left.wav")
     right_audio_path = curr_directory.joinpath("right.wav")
@@ -46,19 +53,13 @@ def gopro_sync(left, right, trimmed_left, trimmed_right):
 
     left_signal_array = np.frombuffer(left_signal, dtype=np.int16)
     right_signal_array = np.frombuffer(right_signal, dtype=np.int16)
-    
+
     # Remove audio files created for temporary use.
     left_wav.close()
     right_wav.close()
-    
-    Path.unlink(left_audio_path)
-    Path.unlink(right_audio_path)
-    
-    # Only delete the directory if it's not already empty
-    try:
-        Path.rmdir(curr_directory)
-    except Exception:
-        pass
+
+    # Delete the temporary directory
+    shutil.rmtree(curr_directory)
 
     # Continue off from before, creating channels and times 
 
@@ -89,8 +90,10 @@ def gopro_sync(left, right, trimmed_left, trimmed_right):
     left_subarray = left_channel[left_spike_start:left_spike_end]
     right_subarray = right_channel[right_spike_start:right_spike_end]
 
-    # Matrix profile can find patterns in nlogn time, so we use it to quickly find conserved patterns.
-    matrix_profile = stumpy.stump(T_A=left_subarray.astype(np.float64), m=m, T_B=right_subarray.astype(np.float64), ignore_trivial=False)
+    # Matrix profile can find patterns in nlogn time, 
+    # so we use it to quickly find conserved patterns.
+    matrix_profile=stumpy.stump(T_A=left_subarray.astype(np.float64),
+                                  m=m, T_B=right_subarray.astype(np.float64), ignore_trivial=False)
 
     # Find the index of the left and right motifs
     left_motif_index = matrix_profile[:,0].argmin()
@@ -112,7 +115,8 @@ def gopro_sync(left, right, trimmed_left, trimmed_right):
 
 
 def main():
-    
+    """Check arguments and set up paths, then call goprosync function
+    """
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--left', type=Path, required=True)
@@ -125,33 +129,31 @@ def main():
 
     if not args.left.is_file():
         print("Left path is not a file.")
-        exit()
-    
+        sys.exit(1)
+
     elif not args.right.is_file():
         print("Right path is not file")
-        exit()
-    
-    elif not args.out.is_dir():
-        print("Out path is not a directory")
-        exit()
-    
+        sys.exit(1)
+
+    # Create output directory or use provided one if exists
+
+    args.out.mkdir(exist_ok=True)
+
     # Make sure that input files are mp4s
 
-    if (args.left.as_posix()[-4:] != ".mp4" and args.left.as_posix()[-4:] != ".MP4"):
+    if args.left.suffix not in (".mp4", ".MP4"):
         print("Ensure that left file is an mp4")
-        exit()
-    
-    if (args.right.as_posix()[-4:] != ".mp4" and args.right.as_posix()[-4:] != ".MP4"):
+        sys.exit(1)
+
+    if args.right.suffix not in (".mp4", ".MP4"):
         print("Ensure that right file is an mp4")
-        exit()
-    
+        sys.exit(1)
+
     left_trimmed = args.out.joinpath("left_trimmed.mp4")
     right_trimmed = args.out.joinpath("right_trimmed.mp4")
 
-    gopro_sync(left=args.left, right=args.right, trimmed_left=left_trimmed, trimmed_right=right_trimmed)
+    gopro_sync(left=args.left, right=args.right, 
+               trimmed_left=left_trimmed, trimmed_right=right_trimmed)
 
 if __name__ == '__main__':
     main()
-
-
-
